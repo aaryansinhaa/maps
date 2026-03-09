@@ -989,6 +989,7 @@ class Processor:
                         path=f"dedupl/{self._dedupl_helper_path(dedup_id)}",
                         content=tile_data,
                         mimetype="application/x-protobuf",
+                        should_compress=True,
                     )
 
                 # Create redirect from tile to dedupl
