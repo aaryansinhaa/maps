@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Tiles are not compressed by libzim (#47)
+
 ## [0.1.0] - 2026-03-06
 
 ### Added
