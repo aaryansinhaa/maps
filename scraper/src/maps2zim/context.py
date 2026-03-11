@@ -114,6 +114,9 @@ class Context:
     # Number of worker threads for the ZIM creator
     zim_workers: int | None = None
 
+    # Dev option: make tile compression optional
+    compress_tiles: bool = False
+
     @classmethod
     def setup(cls, **kwargs: Any):
         new_instance = cls(**kwargs)

@@ -212,6 +212,13 @@ def prepare_context(raw_args: list[str], tmpdir: str) -> None:
         dest="zim_workers",
     )
 
+    parser.add_argument(
+        "--compress-tiles",
+        action="store_true",
+        help="NDev option: make tile compression optional. Default: False",
+        dest="compress_tiles",
+    )
+
     args = parser.parse_args(raw_args)
 
     # Ignore unset values so they do not override the default specified in Context
