@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Use libzim 3.9.0 or above to fix freezing compression issues (#61)
 - Immediately redirect when opening search results (#60)
+- Remove pin button with display of coordinates and zoom (#58)
+- Remove style selector (#57)
+- Switch to automatically chosen map style based on prefer-colors-scheme (#56)
 
 ## [0.1.1] - 2026-03-10
 

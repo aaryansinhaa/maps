@@ -76,19 +76,11 @@ const parseUrlFragment = () => {
   let hasConfigDefaults = false;
   let zimName = null;
   let storageKey = null;
-  let currentStyle = "bright";
-
-  // Load saved style from localStorage
-  const savedStyle = window.localStorage.getItem("openzim_maps_style");
-  if (savedStyle) {
-    currentStyle = savedStyle;
-  }
 
   try {
     const response = await axios.get(toAbsolute("./content/config.json"));
     const config = response.data;
 
-    console.log(config);
     // Get zim_name for localStorage key
     if (config.zimName) {
       zimName = config.zimName;
@@ -175,21 +167,28 @@ const parseUrlFragment = () => {
     });
   };
 
-  setMapStyle(currentStyle);
+  // Listen for prefers-color-scheme changes
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", updateTheme);
+
+  // Automatically switch between kiwix-light and kiwix-dark themes based on
+  // UA prefers-color-scheme value
+  function updateTheme() {
+    let currentStyle = "kiwix-light";
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      currentStyle = "kiwix-dark";
+    }
+    setMapStyle(currentStyle);
+  }
+
+  // Set initial theme at map load
+  updateTheme();
 
   // UI elements
   const buttonContainer = document.querySelector(".button-container");
   const resetButton = document.getElementById("resetButton");
-  const styleSelector = document.getElementById("styleSelector");
-  const coordsButton = document.getElementById("coordsButton");
   const aboutButton = document.getElementById("aboutButton");
-  const coordsPopover = document.getElementById("coordsPopover");
-  const zoomLevel = document.getElementById("zoomLevel");
-  const latitude = document.getElementById("latitude");
-  const longitude = document.getElementById("longitude");
-
-  // Set initial style selector value
-  styleSelector.value = currentStyle;
 
   // Show button container and reset button only after map loads if config has defaults
   map.on("load", () => {
@@ -208,75 +207,8 @@ const parseUrlFragment = () => {
     });
   });
 
-  // Style selector change handler
-  styleSelector.addEventListener("change", (event) => {
-    const newStyle = event.target.value;
-    currentStyle = newStyle;
-    setMapStyle(currentStyle);
-    window.localStorage.setItem("openzim_maps_style", currentStyle);
-  });
-
-  // Toggle popover visibility
-  coordsButton.addEventListener("click", () => {
-    coordsPopover.classList.toggle("visible");
-  });
-
   // About button functionality
   aboutButton.addEventListener("click", () => {
     window.location.href = toAbsolute("./content/about.html");
   });
-
-  // Close popover when clicking outside
-  document.addEventListener("click", (event) => {
-    if (
-      !coordsButton.contains(event.target) &&
-      !coordsPopover.contains(event.target)
-    ) {
-      coordsPopover.classList.remove("visible");
-    }
-  });
-
-  // Debounce function for updating coordinates
-  const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        window.clearTimeout(timeout);
-        func(...args);
-      };
-      window.clearTimeout(timeout);
-      timeout = window.setTimeout(later, wait);
-    };
-  };
-
-  // Update coordinates display and save view to localStorage
-  const updateCoordinates = () => {
-    const center = map.getCenter();
-    zoomLevel.textContent = map.getZoom().toFixed(2);
-    latitude.textContent = center.lat.toFixed(6);
-    longitude.textContent = center.lng.toFixed(6);
-
-    // Save current view to localStorage if we have a storage key
-    if (storageKey) {
-      try {
-        const view = {
-          center: [center.lng, center.lat],
-          zoom: map.getZoom(),
-        };
-        window.localStorage.setItem(storageKey, JSON.stringify(view));
-      } catch (e) {
-        console.warn("Could not save view to localStorage:", e);
-      }
-    }
-  };
-
-  // Debounced update function (100ms delay)
-  const debouncedUpdateCoordinates = debounce(updateCoordinates, 100);
-
-  // Listen to map move and zoom events
-  map.on("move", debouncedUpdateCoordinates);
-  map.on("zoom", debouncedUpdateCoordinates);
-
-  // Initial update
-  updateCoordinates();
 })();

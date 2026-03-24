@@ -40,6 +40,7 @@ from maps2zim.zimconfig import ZimConfig
 
 context = Context.get()
 logger = context.logger
+assets = Path(str(resources.files("maps2zim"))) / "assets"
 
 LOG_EVERY_SECONDS = 60
 
@@ -295,9 +296,6 @@ class Processor:
 
         context.current_thread_workitem = "download mbtiles"
         self._fetch_mbtiles()
-
-        context.current_thread_workitem = "download styles"
-        self._fetch_styles_tar_gz()
 
         context.current_thread_workitem = "write styles"
         self._write_styles(creator)
@@ -784,85 +782,43 @@ class Processor:
 
         logger.info("  Sprites added to ZIM")
 
-    def _fetch_styles_tar_gz(self):
-        """Download styles tar.gz from OpenFreeMap if not already cached.
-
-        If file already exists in assets folder, do nothing.
-        Otherwise, download from https://assets.openfreemap.com/styles/ofm.tar.gz
-        """
-        styles_tar_gz_path = context.assets_folder / "styles.tar.gz"
-
-        # If file already exists, we're done
-        if styles_tar_gz_path.exists():
-            logger.info(
-                f"  using styles tar.gz already available at {styles_tar_gz_path}"
-            )
-            return
-
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
-
-        logger.info("  Downloading styles from OpenFreeMap")
-        save_large_file(
-            "https://assets.openfreemap.com/styles/ofm.tar.gz",
-            fpath=styles_tar_gz_path,
-        )
-        logger.info(f"  styles tar.gz saved to {styles_tar_gz_path}")
-
     def _write_styles(self, creator: Creator):
-        """Extract styles from tar.gz and add to ZIM under 'styles' folder.
+        """Adapt styles to available layers and add to ZIM under 'styles' folder.
 
-        Extracts the cached styles tar.gz file, modifies JSON files to use relative
-        paths by replacing the domain with '.', filters layers based on available
-        mbtiles layers, and adds all contents to the ZIM without the .json extension.
+        Modifies styles files to use relative paths by replacing the domain with '.',
+        filters layers based on available mbtiles layers, and adds all contents to
+        the ZIM without the .json extension.
         """
-        styles_tar_gz_path = context.assets_folder / "styles.tar.gz"
         available_layers = self._get_available_layers_from_mbtiles()
 
-        logger.info("  Extracting styles and adding to ZIM")
+        logger.info("  Cleaning styles and adding to ZIM")
 
         # Extract and add styles to ZIM
-        with tarfile.open(styles_tar_gz_path, "r:gz") as tar:
-            for member in tar.getmembers():
-                if member.isfile():
-                    # Extract file content
-                    f = tar.extractfile(member)
-                    if f is not None:
-                        content = f.read()
+        for style in Path(str(assets)).glob("kiwix-*.json"):
 
-                        # If it's a JSON file, process it
-                        if member.name.endswith(".json"):
-                            # Parse JSON
-                            style_obj = json.loads(content.decode("utf-8"))
+            # Parse JSON
+            style_obj = json.loads(style.read_bytes())
 
-                            # Filter layers based on available mbtiles layers
-                            style_obj = self._filter_style_layers(
-                                style_obj, available_layers
-                            )
+            # Filter layers based on available mbtiles layers
+            style_obj = self._filter_style_layers(style_obj, available_layers)
 
-                            # Replace domain with relative path
-                            content = json.dumps(
-                                style_obj, ensure_ascii=False, indent=2
-                            ).encode("utf-8")
-                            content = content.replace(
-                                b"https://__TILEJSON_DOMAIN__", b"."
-                            )
-                            # Replace natural_earth PNG tiles with webp
-                            content = content.replace(
-                                b"natural_earth/ne2sr/{z}/{x}/{y}.png",
-                                b"natural_earth/ne2sr/{z}/{x}/{y}.webp",
-                            )
+            # Replace domain with relative path
+            content = json.dumps(style_obj, ensure_ascii=False, indent=2).encode(
+                "utf-8"
+            )
+            content = content.replace(b"https://__TILEJSON_DOMAIN__", b".")
 
-                        # Transform path from ofm/... to styles/...
-                        relative_path = member.name.replace("ofm/", "", 1)
-                        # Remove .json extension from style files
-                        if relative_path.endswith(".json"):
-                            relative_path = relative_path[:-5]
-                        zim_path = f"styles/{relative_path}"
-                        creator.add_item_for(
-                            path=zim_path,
-                            content=content,
-                        )
+            # Replace natural_earth PNG tiles with webp
+            content = content.replace(
+                b"natural_earth/ne2sr/{z}/{x}/{y}.png",
+                b"natural_earth/ne2sr/{z}/{x}/{y}.webp",
+            )
+
+            # Add to ZIM
+            creator.add_item_for(
+                path=f"styles/{str(style.relative_to(assets))[:-5]}",
+                content=content,
+            )
 
         logger.info("  Styles added to ZIM")
 
@@ -1474,8 +1430,7 @@ class Processor:
             return
 
         # Add CSS file to ZIM
-        assets = resources.files("maps2zim") / "assets"
-        styles_path = Path(str(assets / "styles.css"))
+        styles_path = assets / "styles.css"
         creator.add_item_for(
             path="content/styles.css",
             fpath=styles_path,

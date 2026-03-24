@@ -13,17 +13,6 @@
   <body>
     <div id="map">
       <div class="button-container">
-        <select
-          id="styleSelector"
-          class="style-selector"
-          title="Switch map style"
-        >
-          <option value="bright">Bright</option>
-          <option value="liberty">Liberty</option>
-          <option value="fiord">Fiord</option>
-          <option value="positron">Positron</option>
-          <option value="dark">Dark</option>
-        </select>
         <button
           id="resetButton"
           class="reset-button"
@@ -31,29 +20,9 @@
         >
           🏠
         </button>
-        <button
-          id="coordsButton"
-          class="coords-button"
-          title="Show map coordinates and zoom level"
-        >
-          📍
-        </button>
-        <button
-          id="aboutButton"
-          class="about-button"
-          title="About this map"
-        >
+        <button id="aboutButton" class="about-button" title="About this map">
           ?
         </button>
-      </div>
-      <div id="coordsPopover" class="coords-popover">
-        <div class="coords-content">
-          <p class="coords">
-            Lat: <span id="latitude">0.00</span><br />
-            Lon: <span id="longitude">0.00</span><br />
-            Zoom: <span id="zoomLevel">11</span>
-          </p>
-        </div>
       </div>
     </div>
     <script type="module" src="./main.js"></script>
