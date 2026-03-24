@@ -48,7 +48,14 @@ def test_zim_metadata(zim_fh: Archive):
     [
         # pytest.param("content/logo.png", "image/png", id="logo"),
         pytest.param("favicon.ico", "image/vnd.microsoft.icon", id="favicon"),
-        pytest.param("content/styles.css", "text/css", id="styles.css"),
+        pytest.param("assets/styles.css", "text/css", id="styles.css"),
+        pytest.param("assets/kiwix-light", "application/json", id="kiwix-light"),
+        pytest.param("assets/kiwix-dark", "application/json", id="kiwix-dark"),
+        pytest.param(
+            "assets/mapbox-gl-rtl-text.js",
+            "text/javascript",
+            id="mapbox-gl-rtl-text.js",
+        ),
         pytest.param("content/about.html", "text/html", id="about.html"),
         pytest.param("planet", "application/json", id="planet"),
     ],

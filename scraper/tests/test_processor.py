@@ -393,10 +393,10 @@ def test_parse_geonames_with_tile_filter():
     with TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
 
-        # Setup context with temp assets folder
+        # Setup context with temp dl folder
         context = Context.get()
-        old_assets_folder = context.assets_folder
-        context.assets_folder = tmpdir_path
+        old_dl_folder = context.dl_folder
+        context.dl_folder = tmpdir_path
 
         # Write geonames file
         geonames_path = tmpdir_path / f"{context.geonames_region}.txt"
@@ -442,8 +442,8 @@ def test_parse_geonames_with_tile_filter():
             assert lyon_places[0].feature_code == "ADM2"
 
         finally:
-            # Restore original assets folder
-            context.assets_folder = old_assets_folder
+            # Restore original dl folder
+            context.dl_folder = old_dl_folder
 
 
 def test_parse_geonames_without_tile_filter():
@@ -457,10 +457,10 @@ def test_parse_geonames_without_tile_filter():
     with TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
 
-        # Setup context with temp assets folder
+        # Setup context with temp dl folder
         context = Context.get()
-        old_assets_folder = context.assets_folder
-        context.assets_folder = tmpdir_path
+        old_dl_folder = context.dl_folder
+        context.dl_folder = tmpdir_path
 
         # Write geonames file
         geonames_path = tmpdir_path / f"{context.geonames_region}.txt"
@@ -481,8 +481,8 @@ def test_parse_geonames_without_tile_filter():
             assert "Berlin" in places_dict
 
         finally:
-            # Restore original assets folder
-            context.assets_folder = old_assets_folder
+            # Restore original dl folder
+            context.dl_folder = old_dl_folder
 
 
 def test_uses_geofabrik_polys_true_for_geofabrik_url():

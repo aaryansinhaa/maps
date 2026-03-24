@@ -12,7 +12,7 @@ CONTEXT_DEFAULTS: dict[str, Any] = {
     "name": None,
     "title": None,
     "description": None,
-    "assets_folder": None,
+    "dl_folder": None,
 }
 
 # initialize a context since it is a requirement for most modules to load

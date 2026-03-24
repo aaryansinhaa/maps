@@ -38,11 +38,11 @@ class Context:
     # info passed in User-Agent header of web requests
     contact_info: str = "https://www.kiwix.org"
 
-    # temporary folder to store temporary assets (e.g. cached API response)
+    # temporary folder to store temporary files (e.g. cached API response)
     tmp_folder: Path
 
-    # folder to fetch / store downloaded assets (can be reused across runs)
-    assets_folder: Path
+    # folder to fetch / store downloaded files (can be reused across runs)
+    dl_folder: Path
 
     # folder where the ZIM will be built
     output_folder: Path = Path(os.getenv("MAPS_OUTPUT", "output"))

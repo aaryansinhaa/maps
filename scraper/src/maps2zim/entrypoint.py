@@ -135,11 +135,11 @@ def prepare_context(raw_args: list[str], tmpdir: str) -> None:
     )
 
     parser.add_argument(
-        "--assets",
-        help="Folder folder to fetch / store downloaded assets (can be reused across "
+        "--dl",
+        help="Folder folder to fetch / store downloaded files (can be reused across "
         "runs)",
         type=Path,
-        dest="assets_folder",
+        dest="dl_folder",
     )
 
     parser.add_argument("--debug", help="Enable verbose output", action="store_true")
@@ -225,8 +225,8 @@ def prepare_context(raw_args: list[str], tmpdir: str) -> None:
         else:
             args_dict["tmp_folder"] = Path(tmpdir)
 
-    if not args_dict.get("assets_folder", None):
-        args_dict["assets_folder"] = args_dict["tmp_folder"] / "assets"
+    if not args_dict.get("dl_folder", None):
+        args_dict["dl_folder"] = args_dict["tmp_folder"] / "dl"
 
     args_dict["_current_thread_workitem"] = threading.local()
     args_dict["web_session"] = get_session()

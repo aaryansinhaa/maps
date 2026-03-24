@@ -142,7 +142,7 @@ const parseUrlFragment = () => {
   });
 
   const setMapStyle = (styleName) => {
-    map.setStyle(`./styles/${styleName}`, {
+    map.setStyle(`./assets/${styleName}`, {
       validate: false,
       transformStyle: (previousStyle, nextStyle) => {
         return {

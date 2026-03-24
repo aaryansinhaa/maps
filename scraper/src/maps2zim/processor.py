@@ -276,6 +276,9 @@ class Processor:
         logger.info("  Generating about page...")
         self._write_about_html(creator)
 
+        context.current_thread_workitem = "write assets"
+        self._write_assets(creator)
+
         context.current_thread_workitem = "download fonts"
         self._fetch_fonts_tar_gz()
 
@@ -302,9 +305,6 @@ class Processor:
 
         context.current_thread_workitem = "tilejson"
         self._write_tilejson(creator)
-
-        context.current_thread_workitem = "mapbox-gl-rtl-text.js"
-        self._write_mapbox_gl_rtl_text(creator)
 
         # Initialize tile filter if poly files or zoom filtering is specified
         tile_filter: TileFilter | None = None
@@ -430,10 +430,10 @@ class Processor:
     def _fetch_fonts_tar_gz(self):
         """Download fonts tar.gz from OpenFreeMap if not already cached.
 
-        If file already exists in assets folder, do nothing.
+        If file already exists in dl folder, do nothing.
         Otherwise, download from https://assets.openfreemap.com/fonts/ofm.tar.gz
         """
-        fonts_tar_gz_path = context.assets_folder / "ofm.tar.gz"
+        fonts_tar_gz_path = context.dl_folder / "ofm.tar.gz"
 
         # If file already exists, we're done
         if fonts_tar_gz_path.exists():
@@ -442,8 +442,8 @@ class Processor:
             )
             return
 
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        # Create dl folder if it doesn't exist
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info("  Downloading fonts from OpenFreeMap")
         save_large_file(
@@ -458,7 +458,7 @@ class Processor:
         Extracts the cached fonts tar.gz file and adds all contents to the ZIM
         with paths under the 'fonts/' subfolder.
         """
-        fonts_tar_gz_path = context.assets_folder / "ofm.tar.gz"
+        fonts_tar_gz_path = context.dl_folder / "ofm.tar.gz"
 
         logger.info("  Extracting fonts and adding to ZIM")
 
@@ -488,10 +488,10 @@ class Processor:
     def _fetch_natural_earth_tar_gz(self):
         """Download natural_earth tar.gz from OpenFreeMap if not already cached.
 
-        If file already exists in assets folder, do nothing.
+        If file already exists in dl folder, do nothing.
         Otherwise, download from http://assets.openfreemap.com/natural_earth/ofm.tar.gz
         """
-        natural_earth_tar_gz_path = context.assets_folder / "natural_earth.tar.gz"
+        natural_earth_tar_gz_path = context.dl_folder / "natural_earth.tar.gz"
 
         # If file already exists, we're done
         if natural_earth_tar_gz_path.exists():
@@ -501,8 +501,8 @@ class Processor:
             )
             return
 
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        # Create dl folder if it doesn't exist
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info("  Downloading natural_earth from OpenFreeMap")
         save_large_file(
@@ -518,7 +518,7 @@ class Processor:
         to the ZIM, transforming paths from ofm/ne2sr/ to natural_earth/ne2sr/.
         Raises an error if no webp files are found.
         """
-        natural_earth_tar_gz_path = context.assets_folder / "natural_earth.tar.gz"
+        natural_earth_tar_gz_path = context.dl_folder / "natural_earth.tar.gz"
 
         logger.info("  Extracting natural_earth and adding to ZIM")
 
@@ -581,10 +581,10 @@ class Processor:
 
         Downloads from https://download.geonames.org/export/dump/{region}.zip,
         extracts the TSV file, and removes the ZIP file.
-        The extracted TSV is cached in the assets folder for processing.
+        The extracted TSV is cached in the dl folder for processing.
         """
-        geonames_zip_path = context.assets_folder / f"{context.geonames_region}.zip"
-        geonames_txt_path = context.assets_folder / f"{context.geonames_region}.txt"
+        geonames_zip_path = context.dl_folder / f"{context.geonames_region}.zip"
+        geonames_txt_path = context.dl_folder / f"{context.geonames_region}.txt"
 
         # If extracted TSV file already exists, we're done
         if geonames_txt_path.exists():
@@ -594,8 +594,8 @@ class Processor:
             )
             return
 
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        # Create dl folder if it doesn't exist
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info(
             f"  Downloading geonames {context.geonames_region} from geonames.org"
@@ -618,7 +618,7 @@ class Processor:
                     f"Could not find {txt_file_name} in geonames ZIP at "
                     f"{geonames_zip_path}"
                 )
-            zip_ref.extract(txt_file_name, context.assets_folder)
+            zip_ref.extract(txt_file_name, context.dl_folder)
 
         # Remove ZIP file to save space
         geonames_zip_path.unlink()
@@ -629,10 +629,10 @@ class Processor:
 
         Downloads from https://download.geonames.org/export/dump/hierarchy.zip,
         extracts the hierarchy.txt file, and removes the ZIP file.
-        The extracted TSV is cached in the assets folder for processing.
+        The extracted TSV is cached in the dl folder for processing.
         """
-        hierarchy_zip_path = context.assets_folder / "hierarchy.zip"
-        hierarchy_txt_path = context.assets_folder / "hierarchy.txt"
+        hierarchy_zip_path = context.dl_folder / "hierarchy.zip"
+        hierarchy_txt_path = context.dl_folder / "hierarchy.txt"
 
         # If extracted TSV file already exists, we're done
         if hierarchy_txt_path.exists():
@@ -641,8 +641,8 @@ class Processor:
             )
             return
 
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        # Create dl folder if it doesn't exist
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info("  Downloading hierarchy from geonames.org")
         hierarchy_url = "https://download.geonames.org/export/dump/hierarchy.zip"
@@ -656,7 +656,7 @@ class Processor:
                 raise OSError(
                     f"Could not find hierarchy.txt in ZIP at {hierarchy_zip_path}"
                 )
-            zip_ref.extract("hierarchy.txt", context.assets_folder)
+            zip_ref.extract("hierarchy.txt", context.dl_folder)
 
         # Remove ZIP file to save space
         hierarchy_zip_path.unlink()
@@ -668,9 +668,9 @@ class Processor:
         """Download country info TSV from geonames if not already cached.
 
         Downloads from https://download.geonames.org/export/dump/countryInfo.txt
-        and caches it in the assets folder.
+        and caches it in the dl folder.
         """
-        country_info_path = context.assets_folder / "countryInfo.txt"
+        country_info_path = context.dl_folder / "countryInfo.txt"
 
         # If file already exists, we're done
         if country_info_path.exists():
@@ -679,8 +679,8 @@ class Processor:
             )
             return
 
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        # Create dl folder if it doesn't exist
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info("  Downloading country info from geonames.org")
         save_large_file(
@@ -699,7 +699,7 @@ class Processor:
         Returns:
             Dictionary mapping ISO code to country name.
         """
-        country_info_path = context.assets_folder / "countryInfo.txt"
+        country_info_path = context.dl_folder / "countryInfo.txt"
 
         if not country_info_path.exists():
             logger.info("  Country info not available, skipping country name lookup")
@@ -736,10 +736,10 @@ class Processor:
     def _fetch_sprites_tar_gz(self):
         """Download sprites tar.gz from OpenFreeMap if not already cached.
 
-        If file already exists in assets folder, do nothing.
+        If file already exists in dl folder, do nothing.
         Otherwise, download from https://assets.openfreemap.com/sprites/ofm_f384.tar.gz
         """
-        sprites_tar_gz_path = context.assets_folder / "sprites.tar.gz"
+        sprites_tar_gz_path = context.dl_folder / "sprites.tar.gz"
 
         # If file already exists, we're done
         if sprites_tar_gz_path.exists():
@@ -748,8 +748,8 @@ class Processor:
             )
             return
 
-        # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        # Create dl folder if it doesn't exist
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info("  Downloading sprites from OpenFreeMap")
         save_large_file(
@@ -764,7 +764,7 @@ class Processor:
         Extracts the cached sprites tar.gz file and adds all contents to the ZIM,
         transforming paths from ofm_f384/ to sprites/ofm_f384/.
         """
-        sprites_tar_gz_path = context.assets_folder / "sprites.tar.gz"
+        sprites_tar_gz_path = context.dl_folder / "sprites.tar.gz"
 
         logger.info("  Extracting sprites and adding to ZIM")
 
@@ -797,7 +797,7 @@ class Processor:
         logger.info("  Cleaning styles and adding to ZIM")
 
         # Extract and add styles to ZIM
-        for style in Path(str(assets)).glob("kiwix-*.json"):
+        for style in assets.glob("kiwix-*.json"):
 
             # Parse JSON
             style_obj = json.loads(style.read_bytes())
@@ -819,7 +819,7 @@ class Processor:
 
             # Add to ZIM
             creator.add_item_for(
-                path=f"styles/{str(style.relative_to(assets))[:-5]}",
+                path=f"assets/{str(style.relative_to(assets))[:-5]}",
                 content=content,
             )
 
@@ -831,7 +831,7 @@ class Processor:
         Reads the mbtiles database and extracts the list of available layers
         from the vector_layers metadata.
         """
-        mbtiles_path = context.assets_folder / f"{context.area}.mbtiles"
+        mbtiles_path = context.dl_folder / f"{context.area}.mbtiles"
 
         # If mbtiles doesn't exist yet, return empty set
         if not mbtiles_path.exists():
@@ -887,7 +887,7 @@ class Processor:
         Returns:
             Tuple of (dedupl_count, tile_count)
         """
-        mbtiles_path = context.assets_folder / f"{context.area}.mbtiles"
+        mbtiles_path = context.dl_folder / f"{context.area}.mbtiles"
         conn = sqlite3.connect(mbtiles_path)
         c = conn.cursor()
 
@@ -919,7 +919,7 @@ class Processor:
         """
         logger.info("  Processing tiles and dedup files")
 
-        mbtiles_path = context.assets_folder / f"{context.area}.mbtiles"
+        mbtiles_path = context.dl_folder / f"{context.area}.mbtiles"
         conn = sqlite3.connect(mbtiles_path)
         c = conn.cursor()
 
@@ -1013,7 +1013,7 @@ class Processor:
         Returns:
             Maximum zoom level (default 14 if not found)
         """
-        mbtiles_path = context.assets_folder / f"{context.area}.mbtiles"
+        mbtiles_path = context.dl_folder / f"{context.area}.mbtiles"
         if not mbtiles_path.exists():
             return 14  # Default if file doesn't exist yet
 
@@ -1028,7 +1028,7 @@ class Processor:
             conn.close()
 
     def _fetch_mbtiles(self):
-        """Ensure mbtiles file is available in assets folder
+        """Ensure mbtiles file is available in dl folder
 
         If file is already there, do nothing.
 
@@ -1039,7 +1039,7 @@ class Processor:
 
         # Determine the mbtiles filename based on area
         mbtiles_filename = f"{context.area}.mbtiles"
-        mbtiles_path = context.assets_folder / mbtiles_filename
+        mbtiles_path = context.dl_folder / mbtiles_filename
 
         # If file already exists, we're done
         if mbtiles_path.exists():
@@ -1047,7 +1047,7 @@ class Processor:
             return
 
         # Create assets folder if it doesn't exist
-        context.assets_folder.mkdir(parents=True, exist_ok=True)
+        context.dl_folder.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"  Fetching mbtiles file for area: {context.area}")
 
@@ -1123,7 +1123,7 @@ class Processor:
         Reads metadata from the mbtiles database and generates a TileJSON file
         that describes the tileset for use by the web UI.
         """
-        mbtiles_path = context.assets_folder / f"{context.area}.mbtiles"
+        mbtiles_path = context.dl_folder / f"{context.area}.mbtiles"
         conn = sqlite3.connect(mbtiles_path)
         c = conn.cursor()
 
@@ -1214,7 +1214,7 @@ class Processor:
             Dictionary mapping place names to lists of SearchPlace objects.
             Returns empty dict if data file is not available.
         """
-        geonames_txt_path = context.assets_folder / f"{context.geonames_region}.txt"
+        geonames_txt_path = context.dl_folder / f"{context.geonames_region}.txt"
 
         if not geonames_txt_path.exists():
             logger.info("  Geonames data not available, skipping")
@@ -1310,7 +1310,7 @@ class Processor:
         Returns:
             Dictionary mapping child_id to parent_id.
         """
-        hierarchy_txt_path = context.assets_folder / "hierarchy.txt"
+        hierarchy_txt_path = context.dl_folder / "hierarchy.txt"
 
         if not hierarchy_txt_path.exists():
             logger.info("  Hierarchy data not available, skipping hierarchical labels")
@@ -1422,7 +1422,6 @@ class Processor:
         Takes a dictionary of places grouped by name and creates:
         - Redirect HTML for unique place names
         - Disambiguation HTML for duplicate names
-        - CSS file for styling (styles.css)
 
         Args:
             creator: ZIM creator object
@@ -1431,14 +1430,6 @@ class Processor:
         if not places_dict:
             logger.info("  No places to write, skipping")
             return
-
-        # Add CSS file to ZIM
-        styles_path = assets / "styles.css"
-        creator.add_item_for(
-            path="content/styles.css",
-            fpath=styles_path,
-            mimetype="text/css",
-        )
 
         # Setup progress tracking
         total_places = len(places_dict)
@@ -1507,7 +1498,7 @@ class Processor:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="0;URL='{map_url}'" />
-    <link rel="stylesheet" href="{root_prefix}content/styles.css">
+    <link rel="stylesheet" href="{root_prefix}assets/styles.css">
 </head>
 <body>
     <div class="container">
@@ -1543,7 +1534,7 @@ class Processor:
     <title>{name} - Disambiguation</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{root_prefix}content/styles.css">
+    <link rel="stylesheet" href="{root_prefix}assets/styles.css">
 </head>
 <body>
     <div class="container">
@@ -1704,7 +1695,7 @@ class Processor:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - {title_escaped}</title>
-    <link rel="stylesheet" href="../content/styles.css">
+    <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
     <div class="container" style="max-width:700px">
@@ -1758,10 +1749,9 @@ class Processor:
             title=f"About - {title}",
         )
 
-    def _write_mapbox_gl_rtl_text(self, creator: Creator):
-        """Add mapbox plugin"""
+    def _write_assets(self, creator: Creator):
+        """Add asset files"""
 
-        creator.add_item_for(
-            path="assets/mapbox-gl-rtl-text.js", fpath=assets / "mapbox-gl-rtl-text.js"
-        )
-        logger.info("  mapbox-gl-rtl-text.js added to ZIM")
+        for asset in ["styles.css", "mapbox-gl-rtl-text.js"]:
+            creator.add_item_for(path=f"assets/{asset}", fpath=assets / asset)
+        logger.info(" assets added to ZIM")
