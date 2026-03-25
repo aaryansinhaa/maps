@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { Map } from "maplibre-gl";
+import { Map, ScaleControl } from "maplibre-gl";
 import maplibre from "maplibre-gl";
 import axios from "axios";
 
@@ -140,6 +140,8 @@ const parseUrlFragment = () => {
       return { url: toAbsolute(url) };
     },
   });
+
+  map.addControl(new ScaleControl({ unit: "metric" }), "bottom-right");
 
   const setMapStyle = (styleName) => {
     map.setStyle(`./assets/${styleName}`, {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add map scale control (metric units) to display real-world distances at current zoom level (#46)
+
 ### Fixed
 
 - Use libzim 3.9.0 or above to fix freezing compression issues (#61)
