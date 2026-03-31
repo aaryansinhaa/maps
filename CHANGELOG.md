@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bad favicon paths (#68)
 - Replace axios with fetch API and move config.json to a relative URL (#75)
 - Create ZIM alias instead of redirects for tiles (#53)
+- Reduce number of alias for tiles to a strict minimum (#78)
 
 ## [0.1.1] - 2026-03-10
 

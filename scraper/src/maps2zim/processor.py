@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from libzim.writer import Hint
+from libzim.writer import Hint  # pyright: ignore[reportMissingModuleSource]
 from pydantic import BaseModel
 from schedule import every, run_pending
 from zimscraperlib.download import save_large_file
@@ -911,22 +911,22 @@ class Processor:
     ):
         """Write all tiles and tile deduplication files in a single pass.
 
-        Iterates through tiles_shallow, writing each unique dedup tile data
-        to ZIM and creating redirects from tile paths to dedup paths.
+        Iterates through tiles_shallow, writing each unique tile data to ZIM and
+        creating aliases when multiple tiles share the same underlying data.
 
         Args:
             creator: ZIM creator object
             tile_filter: Optional TileFilter for geographic filtering
             total_tile_count: Total number of tiles in tiles_shallow
         """
-        logger.info("  Processing tiles and dedup files")
+        logger.info("  Processing tiles")
 
         mbtiles_path = context.dl_folder / f"{context.area}.mbtiles"
         conn = sqlite3.connect(mbtiles_path)
         c = conn.cursor()
 
         try:
-            written_dedup_ids: set[int] = set()
+            tile_data_id_to_path: dict[int, str] = {}
             written_tiles: int = 0
             last_log_time = time.time()
 
@@ -939,7 +939,7 @@ class Processor:
                 z = row[0]
                 x = row[1]
                 y = self._flip_y(z, row[2])
-                dedup_id = row[3]
+                tile_data_id = row[3]
 
                 # Update progress (at the beginning for adequate values)
                 self.stats_items_done += 1
@@ -950,22 +950,23 @@ class Processor:
                     # Log progress if more than 1 minute since last log
                     continue
 
-                # Construct paths
+                # Construct path
                 tile_path = f"tiles/{z}/{x}/{y}.pbf"
-                dedupl_path = f"dedupl/{self._dedupl_helper_path(dedup_id)}"
 
-                # Write dedup file if this is the first time we see this dedup_id
-                if dedup_id not in written_dedup_ids:
-                    written_dedup_ids.add(dedup_id)
+                # Write dedup file if this is the first time we see this tile_data_id
+                if tile_data_id not in tile_data_id_to_path:
+                    tile_data_id_to_path[tile_data_id] = tile_path
 
-                    # Fetch tile data for this dedup_id
+                    # Fetch tile data for this tile_data_id
                     row_data = conn.execute(
                         "select tile_data from tiles_data where tile_data_id = ?",
-                        (dedup_id,),
+                        (tile_data_id,),
                     ).fetchone()
 
                     if not row_data:
-                        raise ValueError(f"Tile data not found for dedup_id={dedup_id}")
+                        raise ValueError(
+                            f"Tile data not found for tile_data_id={tile_data_id}"
+                        )
 
                     tile_data = row_data[0]
 
@@ -976,18 +977,24 @@ class Processor:
                         # If decompression fails, assume data is already uncompressed
                         pass
 
-                    # Add dedup file to ZIM
+                    # Add real data to ZIM
                     creator.add_item_for(
-                        path=f"dedupl/{self._dedupl_helper_path(dedup_id)}",
+                        path=tile_path,
                         content=tile_data,
                         mimetype="application/x-protobuf",
                         should_compress=True,
+                        is_front=False,
                     )
 
-                # Create alias from tile to dedupl
-                creator.add_alias(
-                    tile_path, "", dedupl_path, hints={Hint.FRONT_ARTICLE: False}
-                )
+                else:
+                    # Create alias from new tile to original tile already written
+                    creator.add_alias(
+                        tile_path,
+                        "",
+                        tile_data_id_to_path[tile_data_id],
+                        hints={Hint.FRONT_ARTICLE: False},
+                    )
+
                 written_tiles += 1
 
                 # Log progress every LOG_EVERY_SECONDS
@@ -996,15 +1003,17 @@ class Processor:
                     logger.info(
                         f"  Processed {i}/{total_tile_count} tiles "
                         f"({i / total_tile_count * 100:.1f}% processed: "
-                        f"{written_tiles} tiles and {len(written_dedup_ids)} "
-                        "unique dedup written)"
+                        f"{written_tiles} tiles written in the ZIM "
+                        f"({len(tile_data_id_to_path)} real data, "
+                        f"{written_tiles - len(tile_data_id_to_path)} aliases)"
                     )
                     last_log_time = current_time
 
             logger.info(
                 f"  Processing complete: {total_tile_count} tiles processed, "
-                f"{written_tiles} tiles and {len(written_dedup_ids)} unique dedup "
-                "written in the ZIM"
+                f"{written_tiles} tiles written in the ZIM "
+                f"({len(tile_data_id_to_path)} real data, "
+                f"{written_tiles - len(tile_data_id_to_path)} aliases)"
             )
 
         finally:
@@ -1098,19 +1107,6 @@ class Processor:
             fpath=mbtiles_path,
         )
         logger.info(f"  mbtiles file saved to {mbtiles_path}")
-
-    @staticmethod
-    def _dedupl_helper_path(dedupl_id: int) -> str:
-        """Calculate dedupl path for a given ID.
-
-        Organizes IDs into a 3-level directory structure to keep max
-        1000 items per directory, allowing for 1 billion files.
-        """
-        str_num = f"{dedupl_id:09d}"
-        l1 = str_num[:3]
-        l2 = str_num[3:6]
-        l3 = str_num[6:]
-        return f"{l1}/{l2}/{l3}.pbf"
 
     @staticmethod
     def _flip_y(zoom: int, y: int) -> int:
