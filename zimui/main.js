@@ -2,7 +2,6 @@ import "./style.css";
 
 import { Map, ScaleControl } from "maplibre-gl";
 import maplibre from "maplibre-gl";
-import axios from "axios";
 
 maplibre
   .setRTLTextPlugin("./assets/mapbox-gl-rtl-text.js", true)
@@ -84,8 +83,11 @@ const parseUrlFragment = () => {
   let storageKey = null;
 
   try {
-    const response = await axios.get(toAbsolute("./content/config.json"));
-    const config = response.data;
+    const response = await fetch("./content/config.json");
+    if (!response.ok) {
+      throw new Error(`fetch error: ${response.status}`);
+    }
+    const config = await response.json();
 
     // Get zim_name for localStorage key
     if (config.zimName) {

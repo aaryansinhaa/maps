@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix support of RTL strings in the map (#54)
 - Move from --assets to --dl CLI param for code clarity (#68)
 - Fix bad favicon paths (#68)
+- Replace axios with fetch API and move config.json to a relative URL (#75)
 
 ## [0.1.1] - 2026-03-10
 
