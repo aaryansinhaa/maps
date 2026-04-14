@@ -3,10 +3,48 @@ import "./style.css";
 import { Map, ScaleControl } from "maplibre-gl";
 import maplibre from "maplibre-gl";
 
-maplibre
-  .setRTLTextPlugin("./assets/mapbox-gl-rtl-text.js", true)
-  .then(() => console.log("RTL plugin loaded"))
-  .catch((err) => console.error("RTL plugin error:", err));
+const isWebGLAvailable = () => {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+    );
+  } catch {
+    return false;
+  }
+};
+
+const isFetchAPIAvailable = async () => {
+  try {
+    // any URL (even missing content) would work, but better to fetch something useful
+    await fetch("./content/config.json");
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const getMissingCapabilities = async () => {
+  const missing = [];
+  if (!isWebGLAvailable()) missing.push("WebGL");
+  if (!(await isFetchAPIAvailable())) missing.push("Fetch API");
+  return missing;
+};
+
+const showCapabilityError = (missing) => {
+  if (missing.length > 0) {
+    const techno1 = document.getElementById("techno1");
+    techno1.innerHTML = missing[0];
+  }
+  if (missing.length > 1) {
+    const techno2 = document.getElementById("techno2");
+    techno2.innerHTML = missing[1];
+  } else {
+    const andBlock = document.getElementById("and");
+    andBlock.style.display = "none";
+  }
+};
 
 const baseUrl =
   window.location.origin +
@@ -34,6 +72,24 @@ const toAbsolute = (url) => {
     return baseUrl + "/" + url;
   } else {
     return window.location.origin + url;
+  }
+};
+
+const flyTo = (map, center, zoom) => {
+  if (center !== undefined) {
+    if (zoom !== undefined) {
+      map.flyTo({
+        center: center,
+        zoom: zoom,
+        duration: 1000,
+      });
+    } else {
+      // zoom-out as much as possible while keeping expected center
+      map.fitBounds(map.getMaxBounds(), {
+        center: center,
+        duration: 1000,
+      });
+    }
   }
 };
 
@@ -75,6 +131,23 @@ const parseUrlFragment = () => {
 
 // Load config and initialize map
 (async () => {
+  const loadingDiv = document.getElementById("loading");
+  const mapDiv = document.getElementById("map");
+  const errorDiv = document.getElementById("error");
+
+  const missingCapabilities = await getMissingCapabilities();
+  if (missingCapabilities.length > 0) {
+    showCapabilityError(missingCapabilities);
+    loadingDiv.style.display = "none";
+    errorDiv.style.display = "block";
+    return;
+  }
+
+  maplibre
+    .setRTLTextPlugin("./assets/mapbox-gl-rtl-text.js", true)
+    .then(() => console.log("RTL plugin loaded"))
+    .catch((err) => console.error("RTL plugin error:", err));
+
   let defaultCenter = undefined;
   let defaultZoom = undefined;
   let mapConfig = { center: undefined, zoom: undefined, bounds: undefined };
@@ -134,6 +207,9 @@ const parseUrlFragment = () => {
     console.warn("Could not load config.json, using defaults:", error);
   }
 
+  loadingDiv.style.display = "none";
+  mapDiv.style.display = "block";
+
   const map = new Map({
     container: "map",
     maxZoom: 18,
@@ -145,18 +221,7 @@ const parseUrlFragment = () => {
   window.__openzim_map = map; // Save in window, useful for debug purposes
 
   if (mapConfig.bounds !== undefined) {
-    console.log(`Setting bounds to ${mapConfig.bounds}`);
     map.setMaxBounds(mapConfig.bounds);
-  }
-
-  if (mapConfig.zoom !== undefined) {
-    console.log(`Setting zoom to ${mapConfig.zoom}`);
-    map.setZoom(mapConfig.zoom);
-  }
-
-  if (mapConfig.center !== undefined) {
-    console.log(`Setting center to ${mapConfig.center}`);
-    map.setCenter(mapConfig.center);
   }
 
   const scale = new ScaleControl({ unit: "metric" });
@@ -223,6 +288,12 @@ const parseUrlFragment = () => {
     if (defaultCenter !== undefined) {
       resetButton.style.display = "flex";
     }
+    flyTo(map, mapConfig.center, mapConfig.zoom);
+    // This is a bug, but for some reason sometimes the first flyTo doesn't work
+    // and when we retry 1 second later "it works"
+    setTimeout(() => {
+      flyTo(map, mapConfig.center, mapConfig.zoom);
+    }, 1000);
   });
 
   const scaleElement = scale._container;
@@ -238,21 +309,7 @@ const parseUrlFragment = () => {
 
   // Reset button functionality
   resetButton.addEventListener("click", () => {
-    if (defaultCenter !== undefined) {
-      if (defaultZoom !== undefined) {
-        map.flyTo({
-          center: defaultCenter,
-          zoom: defaultZoom,
-          duration: 1000,
-        });
-      } else {
-        // zoom-out as much as possible while keeping expected center
-        map.fitBounds(map.getMaxBounds(), {
-          center: defaultCenter,
-          duration: 1000,
-        });
-      }
-    }
+    flyTo(map, defaultCenter, defaultZoom);
   });
 
   // About button functionality
