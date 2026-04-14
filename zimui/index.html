@@ -7,7 +7,43 @@
     <title>Maps2ZIM</title>
   </head>
   <body>
-    <div id="map">
+    <div id="loading">
+      <div id="spinner"></div>
+    </div>
+    <div id="error" style="display: none">
+      <header>
+        <img
+          src="./dead-kiwix.png"
+          alt="Something is broken!"
+          aria-label="Something is broken!"
+          title="Something is broken!"
+        />
+      </header>
+      <section class="intro">
+        <h1>Oops. Something is not working.</h1>
+        <p>
+          This content requires <code id="techno1"></code>
+          <span id="and">and</span> <code id="techno2"></code> to display
+          properly, but it's currently unavailable in your setup.
+        </p>
+      </section>
+      <section class="advice">
+        <p class="list-intro">Please:</p>
+        <ul>
+          <li>
+            <strong>First, try updating:</strong> Get the latest version of your
+            browser or ZIM reader; newer versions usually fix this
+            automatically.
+          </li>
+          <li>
+            <strong>If you're using a browser:</strong> Some browsers block this
+            typically for privacy reasons. You can either enable it in your
+            browser settings, or try a different browser.
+          </li>
+        </ul>
+      </section>
+    </div>
+    <div id="map" style="display: none">
       <div class="button-container">
         <button
           id="resetButton"
